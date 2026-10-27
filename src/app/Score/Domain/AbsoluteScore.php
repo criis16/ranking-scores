@@ -4,7 +4,8 @@ namespace App\Score\Domain;
 
 final class AbsoluteScore extends Score
 {
-    public function type(): ScoreType {
+    public function type(): ScoreType
+    {
         return ScoreType::Absolute;
     }
 

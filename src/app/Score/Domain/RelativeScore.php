@@ -5,9 +5,10 @@ namespace App\Score\Domain;
 final class RelativeScore extends Score
 {
     public function __construct(
-        ScorePoints $points,
+        ScorePoints                             $points,
         private readonly RelativeScoreOperation $operation
-    ) {
+    )
+    {
         parent::__construct($points);
     }
 
