@@ -5,7 +5,7 @@ namespace Tests\Score\Domain;
 use App\Score\Domain\RelativeScoreOperation;
 use PHPUnit\Framework\Attributes\DataProviderExternal;
 use PHPUnit\Framework\TestCase;
-use Score\Domain\DataProvider\RelativeScoreOperationDataProvider;
+use Tests\Score\Domain\DataProvider\RelativeScoreOperationDataProvider;
 
 final class RelativeScoreOperationTest extends TestCase
 {

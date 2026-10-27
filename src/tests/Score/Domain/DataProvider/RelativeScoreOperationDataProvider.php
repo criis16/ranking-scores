@@ -1,6 +1,6 @@
 <?php
 
-namespace Score\Domain\DataProvider;
+namespace Tests\Score\Domain\DataProvider;
 
 use App\Score\Domain\RelativeScoreOperation;
 

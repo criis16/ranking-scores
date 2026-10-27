@@ -1,6 +1,6 @@
 <?php
 
-namespace Score\Domain;
+namespace Tests\Score\Domain;
 
 use App\Score\Domain\AbsoluteScore;
 use App\Score\Domain\RelativeScore;
