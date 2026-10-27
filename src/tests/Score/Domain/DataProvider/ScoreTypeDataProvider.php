@@ -24,5 +24,10 @@ final class ScoreTypeDataProvider
         yield 'invalid type' => ['invalid_score'];
         yield 'numeric string' => ['123'];
         yield 'special characters' => ['@#$%'];
+        yield 'uppercase type' => ['ABSOLUTE_SCORE'];
+        yield 'mixed case type' => ['Absolute_Score'];
+        yield 'leading space' => [' absolute_score'];
+        yield 'trailing space' => ['absolute_score '];
+        yield 'partial type' => ['absolute'];
     }
 }
