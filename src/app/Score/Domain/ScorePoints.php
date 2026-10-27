@@ -10,13 +10,20 @@ final class ScorePoints extends IntValueObject
 
     public function __construct(int $points)
     {
-        $points = $this->isNegativeValue() ? self::ZERO_POINTS : $points;
+        if ($points < 0) {
+            $points = self::ZERO_POINTS;
+        }
         parent::__construct($points);
     }
 
     public static function initialize(): self
     {
         return new self(self::ZERO_POINTS);
+    }
+
+    public static function create(int $points): self
+    {
+        return new self($points);
     }
 
     public function add(self $other): self
