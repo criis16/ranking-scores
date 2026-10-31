@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\User\Controllers\NewUserController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::post('/user/{userId}/score', NewUserController::class);
