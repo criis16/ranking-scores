@@ -1,0 +1,254 @@
+openapi: 3.1.0
+info:
+  title: Ranking Scores API
+  description: |
+    API to accumulate user scores and query the ranking.
+
+    - Scores accumulate per user: `total` (absolute) is added, `score` (relative) adds or subtracts according to its sign.
+    - The result never goes below `0` (it is clamped when accumulating).
+    - No authentication required.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Local environment (Docker Compose `app` service)
+security: []
+tags:
+  - name: User
+    description: User scores
+  - name: Ranking
+    description: Ranking queries
+paths:
+  /user/{userId}/score:
+    post:
+      tags: [User]
+      operationId: submitUserScore
+      summary: Add a score to a user
+      description: |
+        Adds a score to the user with the given `userId`; if the user does not exist, they are created.
+        The body must contain **exactly one** of the fields: `total` (absolute score) or `score` (relative score).
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User UUID
+          schema:
+            type: string
+            format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/AbsoluteScore'
+                - $ref: '#/components/schemas/RelativeScore'
+            examples:
+              absolute:
+                summary: Absolute score (adds 150)
+                value:
+                  total: 150
+              relative_add:
+                summary: Relative addition of 10 points
+                value:
+                  score: "+10"
+              relative_subtract:
+                summary: Relative subtraction of 30 points (clamped to 0)
+                value:
+                  score: "-30"
+      responses:
+        '200':
+          description: Score saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                status_code: 200
+                message: The user's score has been successfully saved
+        '400':
+          description: Invalid argument (defensive)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                status_code: 400
+                message: 'Invalid argument'
+        '422':
+          description: Validation error — `total`/`score` missing, both provided, or `score` does not match the format `^[+\-]\d+$`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                status_code: 422
+                message: The score field format is invalid.
+        '500':
+          description: Unexpected error saving the score
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                status_code: 500
+                message: 'Error saving user score: Unexpected database failure'
+  /ranking:
+    get:
+      tags: [Ranking]
+      operationId: getRanking
+      summary: Get the user ranking
+      description: |
+        Returns the ranking in one of two modes, chosen by the `type` parameter:
+
+        - `top{N}` — the top `N` users ordered by score descending (e.g. `top30`).
+        - `at{P}/{M}` — window of positions around `P` (1-based) with range `M`
+          (e.g. `At2/1` → position 2 ± 1, i.e. positions 1 to 3).
+
+        The mode name is case-insensitive (`Top30`, `At2/1` are valid).
+        Out-of-range positions, `top0` or no users return `404`.
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: Ranking mode — `top{N}` or `at{P}/{M}` (case-insensitive)
+          schema:
+            type: string
+            pattern: '^(top\d+|at\d+\/\d+)$'
+          examples:
+            top:
+              summary: Top 30
+              value: 'top30'
+            at:
+              summary: Window at position 2 with range 1
+              value: 'at2/1'
+      responses:
+        '200':
+          description: Ranking found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RankingResponse'
+              examples:
+                top:
+                  summary: Top mode
+                  value:
+                    status_code: 200
+                    message: Users found successfully
+                    result:
+                      - id: 550e8400-e29b-41d4-a716-446655440000
+                        score: 300
+                      - id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                        score: 150
+                at:
+                  summary: At mode
+                  value:
+                    status_code: 200
+                    message: Users found successfully
+                    result:
+                      - id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                        score: 150
+        '404':
+          description: No users — empty database, `top0` or out-of-range position
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RankingResponse'
+              example:
+                status_code: 404
+                message: No users found
+                result: []
+        '422':
+          description: '`type` missing or in an invalid format'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                missing:
+                  summary: Missing field
+                  value:
+                    status_code: 422
+                    message: The type field is required.
+                invalid:
+                  summary: Invalid format
+                  value:
+                    status_code: 422
+                    message: The type field format is invalid.
+        '500':
+          description: Unexpected error retrieving the ranking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                status_code: 500
+                message: 'Error retrieving ranking: Unexpected database failure'
+components:
+  schemas:
+    MessageResponse:
+      type: object
+      description: Status response without a result list (200 without content, 400, 422, 500)
+      required:
+        - status_code
+        - message
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: The user's score has been successfully saved
+    UserScore:
+      type: object
+      required:
+        - id
+        - score
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        score:
+          type: integer
+          description: User's accumulated score (never negative)
+          example: 300
+    RankingResponse:
+      type: object
+      required:
+        - status_code
+        - message
+        - result
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Users found successfully
+        result:
+          type: array
+          description: Users ordered by score descending
+          items:
+            $ref: '#/components/schemas/UserScore'
+    AbsoluteScore:
+      type: object
+      description: Absolute score — the value is added to the user's current score
+      required:
+        - total
+      properties:
+        total:
+          type: integer
+          description: Absolute points to add
+          example: 150
+    RelativeScore:
+      type: object
+      description: Relative score — adds or subtracts according to the sign, clamping the result to 0
+      required:
+        - score
+      properties:
+        score:
+          type: string
+          pattern: '^[+\-]\d+$'
+          description: Signed points — `+10` adds, `-30` subtracts
+          example: "+10"
