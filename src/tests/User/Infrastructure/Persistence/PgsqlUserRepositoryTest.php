@@ -30,8 +30,8 @@ final class PgsqlUserRepositoryTest extends TestCase
 
         $connection = DB::connection();
 
-        if (! self::$schemaReady) {
-            if (! $connection->getSchemaBuilder()->hasTable('app_users')) {
+        if (!self::$schemaReady) {
+            if (!$connection->getSchemaBuilder()->hasTable('app_users')) {
                 (require database_path('migrations/2026_10_31_000001_create_app_users_table.php'))->up();
             }
 
