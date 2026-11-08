@@ -10,16 +10,18 @@ use App\User\Domain\UserRepository;
 
 final readonly class GetRankingUseCase
 {
-    public function __construct(private UserRepository $repository) {}
+    public function __construct(private UserRepository $repository)
+    {
+    }
 
     public function __invoke(RankingDTO $dto): array
     {
-        if (! is_null($dto->position) && $dto->position < 1) {
+        if (!is_null($dto->position) && $dto->position < 1) {
             return [];
         }
 
-        $offset = ! is_null($dto->position) ? max(0, $dto->position - 1 - $dto->range) : null;
-        $limit = ! is_null($dto->position)
+        $offset = !is_null($dto->position) ? max(0, $dto->position - 1 - $dto->range) : null;
+        $limit = !is_null($dto->position)
             ? ($dto->position - 1 + $dto->range) - $offset + 1
             : $dto->top;
 
