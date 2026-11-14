@@ -83,6 +83,7 @@ cd ranking-scores
 
 # 1. Environment
 cp src/.env.example src/.env
+#    Set the database password in src/.env: DB_PASSWORD=secret
 
 # 2. Dependencies and application key
 cd src
