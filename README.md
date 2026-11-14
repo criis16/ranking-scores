@@ -75,7 +75,7 @@ Persistence uses the project's own **`app_users`** table (`id` uuid, `score` int
 
 ## Getting started
 
-**Requirements:** Docker with Compose (and PHP + Composer if you want to run the tests locally).
+**Requirements:** Docker with Compose. Local PHP + Composer are only needed if you want to run the application or tests outside Docker.
 
 ```sh
 git clone <repo-url> ranking-scores
@@ -120,22 +120,24 @@ docker compose logs -f app # tail the API logs
 
 ## Tests
 
-Tests run on the **host** against PostgreSQL (through port `5432`, which `compose.yaml` exposes), so you need PHP ≥ 8.3 with the `pdo_pgsql` extension.
-
-**Once**, create the test database (it is the one configured in `phpunit.xml`; it is created empty and the tests set up the schema themselves):
-
-```sh
-docker compose up -d db
-docker compose exec db psql -U laravel -d postgres \
-  -c "CREATE DATABASE ranking_scores_test;"
-```
+The tests run **inside Docker**, so you do not need PHP or the PostgreSQL driver installed on the host. The `tests` service in `compose.yaml` uses the same image as the app (with `pdo_pgsql`) and points to the `db` service and the `ranking_scores_test` database.
 
 Run the full suite (exactly the same command CI uses):
+
+```sh
+docker compose run --rm tests
+```
+
+The container runs:
 
 ```sh
 cd src
 vendor/bin/phpunit --testsuite Shared,Score,User
 ```
+
+The test database is created automatically by `tests/TestCase.php` if it does not exist, and infrastructure tests create their own schema.
+
+If you have not installed the PHP dependencies yet, run `docker compose run --rm app composer install` first (no local Composer needed).
 
 | Suite | Contents |
 |---|---|
@@ -148,14 +150,7 @@ Notes:
 - Domain tests use **in-memory doubles** (no mocks); infrastructure tests use real PostgreSQL inside a transaction that is rolled back after every test.
 - The Laravel skeleton's `Feature` and `Unit` suites are **not** part of CI.
 - On every PR, GitHub Actions (`.github/workflows/tests.yml`) spins up PostgreSQL 18 as a *service* and runs the same command.
-
-Code style:
-
-```sh
-cd src
-vendor/bin/pint            # format
-vendor/bin/pint --test     # check only
-```
+- If you prefer to run the tests on the host, you need PHP ≥ 8.3 with the `pdo_pgsql` extension (`sudo apt install php8.5-pgsql` on Ubuntu) and the `db` service running (`docker compose up -d db`). Note that `phpunit.xml` points to `127.0.0.1`, so that only works from the host.
 
 ## Repository structure
 

@@ -29,6 +29,33 @@ services:
         php artisan migrate --force
         php artisan serve --host=0.0.0.0 --port=8000 --no-reload
 
+  tests:
+    build:
+      context: ./docker
+    image: ranking-scores-app:latest
+    working_dir: /var/www/html
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./src:/var/www/html
+    environment:
+      APP_ENV: testing
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ranking_scores_test
+      DB_USERNAME: laravel
+      DB_PASSWORD: secret
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - tests
+    command:
+      - php
+      - vendor/bin/phpunit
+      - --testsuite
+      - Shared,Score,User
+
   db:
     image: postgres:18-alpine
     environment:
